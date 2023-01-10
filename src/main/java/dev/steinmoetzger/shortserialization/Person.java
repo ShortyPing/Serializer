@@ -9,7 +9,7 @@ package dev.steinmoetzger.shortserialization;
 import dev.steinmoetzger.shortserialization.annotation.SerializableClass;
 import dev.steinmoetzger.shortserialization.annotation.SerializableField;
 
-@SerializableClass(name = "Person", delim = ';')
+@SerializableClass(name = "Person")
 public class Person {
 
     @SerializableField()

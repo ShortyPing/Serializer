@@ -51,10 +51,11 @@ public class SerializationUtil {
 
 
     public static void serialize(Object object, File file, boolean append) throws IOException, SerializeException, IllegalAccessException {
-        serialize(object, file, append, UUID.randomUUID().toString(), new HashMap<>());
+
+        serialize(object, file, append, "ROOT", new HashMap<>());
     }
 
-    private static void serialize(Object object, File file, boolean append, String suffix, HashMap<Object, String> serializeTracker) throws IOException, SerializeException, IllegalAccessException {
+    private static void serialize(Object object, File file, boolean append, String suffix, HashMap<Integer, String> serializeTracker) throws IOException, SerializeException, IllegalAccessException {
 
 
         if (!file.exists())
@@ -67,8 +68,8 @@ public class SerializationUtil {
 
         lockedFiles.add(file);
 
-        serializeTracker.put(object, suffix);
-
+        if(!serializeTracker.containsKey(object.hashCode()))
+            serializeTracker.put(object.hashCode(), suffix);
 
         if (!object.getClass().isAnnotationPresent(SerializableClass.class))
             throw new SerializeException("SerializableClass annotation is missing");
@@ -109,6 +110,7 @@ public class SerializationUtil {
                     throw new RuntimeException(e);
                 }
 
+
                 if (type != null) {
                     builder.append("::DAT [")
                             .append(type.prefix)
@@ -118,7 +120,6 @@ public class SerializationUtil {
                             .append(val == null ? "<NULL>" : val.toString())
                             .append(delim);
                 } else {
-
                     if (val == null) {
                         builder.append("::DAT [<REF>] ")
                                 .append(name)
@@ -126,34 +127,38 @@ public class SerializationUtil {
                     } else {
                         if (!val.getClass().isAnnotationPresent(SerializableClass.class))
                             throw new SerializeException("Any child class of serializable object must have SerializableClass annotation");
-                        UUID uuid = UUID.randomUUID();
-                        builder.append("::DAT [<REF>] ")
-                                .append(name)
-                                .append("=").append(val.getClass().getAnnotation(SerializableClass.class).name()).append("#").append(uuid).append(delim);
 
-                        Object finalVal = val;
+                        // handling circular references
+                        if (serializeTracker.containsKey(val.hashCode())) {
+                            builder.append("::DAT [<REF>] ")
+                                    .append(name)
+                                    .append("=").append(val.getClass().getAnnotation(SerializableClass.class).name()).append("#").append(serializeTracker.get(val.hashCode())).append(delim);
 
-                        for (Field f : val.getClass().getDeclaredFields()) {
-                            f.setAccessible(true);
-                            if (f.isAnnotationPresent(SerializableField.class)) {
-                                if (serializeTracker.containsKey(f.get(val))) {
+                        } else {
+                            UUID uuid = UUID.randomUUID();
 
+                            serializeTracker.put(val.hashCode(), uuid.toString());
+                            builder.append("::DAT [<REF>] ")
+                                    .append(name)
+                                    .append("=").append(val.getClass().getAnnotation(SerializableClass.class).name()).append("#").append(uuid).append(delim);
+
+                            Object finalVal = val;
+
+
+                            new Thread(() -> {
+                                try {
+                                    serialize(finalVal, file, true, uuid.toString(), serializeTracker);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                } catch (SerializeException e) {
+                                    throw new RuntimeException(e);
+                                } catch (IllegalAccessException e) {
+                                    throw new RuntimeException(e);
                                 }
-                            }
-
+                            }).start();
                         }
 
-                        new Thread(() -> {
-                            try {
-                                serialize(finalVal, file, true, uuid.toString(), serializeTracker);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            } catch (SerializeException e) {
-                                throw new RuntimeException(e);
-                            } catch (IllegalAccessException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }).start();
+
                     }
                 }
 
