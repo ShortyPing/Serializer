@@ -16,5 +16,4 @@ import java.lang.annotation.Target;
 public @interface SerializableClass {
 
     String name();
-    char delim() default '\n';
 }

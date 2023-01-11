@@ -19,6 +19,9 @@ public class Car {
     @SerializableField
     private Person person;
 
+    public Car() {
+
+    }
     public Car(String color, int maxSpeed) {
         this.color = color;
         this.maxSpeed = maxSpeed;
@@ -27,5 +30,25 @@ public class Car {
 
     public void setPerson(Person person) {
         this.person = person;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public int getMaxSpeed() {
+        return maxSpeed;
+    }
+
+    public void setMaxSpeed(int maxSpeed) {
+        this.maxSpeed = maxSpeed;
+    }
+
+    public Person getPerson() {
+        return person;
     }
 }

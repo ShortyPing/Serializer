@@ -20,6 +20,9 @@ public class Person {
     @SerializableField
     private Car car;
 
+    public Person() {
+
+    }
     public Person(String name, int age, Car car) {
         this.name = name;
         this.age = age;
@@ -28,5 +31,25 @@ public class Person {
 
     public void setCar(Car car) {
         this.car = car;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public float getAge() {
+        return age;
+    }
+
+    public void setAge(float age) {
+        this.age = age;
+    }
+
+    public Car getCar() {
+        return car;
     }
 }
